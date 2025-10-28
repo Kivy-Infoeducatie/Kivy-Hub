@@ -28,6 +28,7 @@ import { useMouseSupport } from '@/lib/core/hand-tracking/use-mouse-support';
 import { EventRegistry } from '@/lib/core/event-handling/event-registry';
 import { eventPropagation } from '@/lib/core/event-handling/event-propagation';
 import { NormalizedLandmark } from '@mediapipe/hands';
+import { transformCoordinates } from '@/utils/matrix';
 
 interface HandTrackingContextInterface {
   handTracker: HandLandmarker | null;
@@ -104,6 +105,16 @@ export function HandTrackingProvider({ children }: { children: ReactNode }) {
       const startTimeMs = performance.now();
       const results = handTracker.detectForVideo(video, startTimeMs);
 
+      const parsed = results.landmarks.map((landmark) =>
+        landmark.map((l) => ({
+          ...transformCoordinates(l.x, l.y),
+          z: 0
+        }))
+      );
+
+      // @ts-ignore
+      results.landmarks = parsed;
+
       if (results.landmarks && results.landmarks.length > 0) {
         rawLandmarksRef.current = results.landmarks;
 
@@ -118,11 +129,20 @@ export function HandTrackingProvider({ children }: { children: ReactNode }) {
         function emitEvent(handEvent: HandEvent, point: Point, index: number) {
           events.push(handEvent);
 
+          // Safety check: ensure coordinates are finite before using them
+          const screenX = point.x * window.innerWidth;
+          const screenY = point.y * window.innerHeight;
+          
+          if (!isFinite(screenX) || !isFinite(screenY)) {
+            console.warn('Non-finite coordinates detected:', { screenX, screenY, point });
+            return;
+          }
+
           eventPropagation(
             hoveredElements,
             hoveredElementTypes,
-            point.x * window.innerWidth,
-            point.y * window.innerHeight,
+            screenX,
+            screenY,
             handEvent,
             index
           );
@@ -130,8 +150,8 @@ export function HandTrackingProvider({ children }: { children: ReactNode }) {
           eventRegistry.emit(
             'touch-move',
             {
-              x: point.x * window.innerWidth,
-              y: point.y * window.innerHeight
+              x: screenX,
+              y: screenY
             },
             index,
             handEvent

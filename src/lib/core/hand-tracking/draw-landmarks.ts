@@ -31,6 +31,13 @@ export interface DrawOptions {
   shadow?: boolean;
 }
 
+function trans(point: { x: number; y: number }) {
+  return {
+    x: 1 - point.x,
+    y: point.y
+  };
+}
+
 export function drawLandmarks(
   ctx: CanvasRenderingContext2D,
   points: LandmarkPoint[],
@@ -70,15 +77,15 @@ export function drawLandmarks(
 
   ctx.beginPath();
   for (const [i, j] of CONNECTIONS) {
-    const p1 = points[i];
-    const p2 = points[j];
+    const p1 = trans(points[i]);
+    const p2 = trans(points[j]);
     ctx.moveTo(toX(p1.x), toY(p1.y));
     ctx.lineTo(toX(p2.x), toY(p2.y));
   }
   ctx.stroke();
 
   for (let i = 0; i < points.length; i++) {
-    const pt = points[i];
+    const pt = trans(points[i]);
     const x = toX(pt.x);
     const y = toY(pt.y);
 

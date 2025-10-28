@@ -48,9 +48,9 @@ export function useMenu() {
         }
       },
       {
-        icon: <i className='fa fa-book text-6xl' />,
+        icon: <i className='fa fa-brain text-6xl' />,
         fn(setHomeMenu: setHomeMenuFn) {
-          setHomeMenu(recipeMenu);
+          setHomeMenu(AIMenu);
         }
       },
       {
@@ -194,6 +194,17 @@ export function useMenu() {
     icon: <i className='fa fa-book text-6xl' />,
     showBack: true,
     backFn(setHomeMenu: setHomeMenuFn) {
+      setHomeMenu(mainMenu);
+    }
+  };
+
+  const AIMenu: HomeMenu = {
+    items: [],
+    text: 'Speak...',
+    icon: <i className='fa fa-brain text-6xl' />,
+    showBack: true,
+    backFn(setHomeMenu: setHomeMenuFn) {
+
       setHomeMenu(mainMenu);
     }
   };

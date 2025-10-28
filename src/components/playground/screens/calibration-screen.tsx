@@ -6,7 +6,7 @@ export function CalibrationScreen({ active }: { active: boolean }) {
     <div
       className={cn(
         !active ? 'hidden' : 'flex',
-        'h-screen w-screen items-center justify-center bg-white'
+        'h-screen w-screen items-center justify-center bg-black'
       )}
     >
       <HomeBackButton title='Calibration' className='relative' />
