@@ -2,11 +2,14 @@ import { create, type StoreApi, UseBoundStore } from 'zustand';
 import { v4 as uuid } from 'uuid';
 import {
   BaseWidgetState,
+  SYSTEM_IDS,
   WidgetDefinition,
-  WidgetInstance,
-  SYSTEM_IDS
+  WidgetInstance
 } from '@/components/playground-new/types';
-import { createPositionRef, deletePositionRef } from '@/components/playground-new/core/position-utils';
+import {
+  createPositionRef,
+  deletePositionRef
+} from '@/components/playground-new/core/position-utils';
 
 // Registry type that stores all widget instances
 type Registry = Map<string, WidgetInstance<any>>;
@@ -24,7 +27,7 @@ export function getWidgetByID<T extends BaseWidgetState = BaseWidgetState>(
   id: string
 ): WidgetInstance<T> {
   const widget = registry.get(id);
-  
+
   if (!widget) {
     const availableIds = Array.from(registry.keys()).join(', ');
     throw new Error(
@@ -145,21 +148,19 @@ export function initPlayground(): void {
   // Import widgets here to avoid circular dependencies
   const { WidgetGroup } = require('@/components/playground-new/widget-group');
   const { WidgetNav } = require('@/components/playground-new/widget-nav');
-  const { NavBar } = require('@/components/playground-new/nav-bar');
   const { Counter } = require('@/components/playground-new/counter');
 
   // Create the widget tree
   createWidget(WidgetGroup, '', SYSTEM_IDS.ROOT);
-  createWidget(NavBar, SYSTEM_IDS.ROOT, SYSTEM_IDS.NAV_BAR);
   createWidget(WidgetNav, SYSTEM_IDS.ROOT, SYSTEM_IDS.ROOT_NAV);
-  
+
   // Create screen widgets (they're independent, not children of nav)
-  createWidget(WidgetGroup, SYSTEM_IDS.ROOT, SYSTEM_IDS.MAIN);
-  createWidget(WidgetGroup, SYSTEM_IDS.ROOT, SYSTEM_IDS.CALIBRATION);
-  
+  createWidget(WidgetGroup, SYSTEM_IDS.ROOT_NAV, SYSTEM_IDS.MAIN);
+  createWidget(WidgetGroup, SYSTEM_IDS.ROOT_NAV, SYSTEM_IDS.CALIBRATION);
+
   // Create widgets within screens
   createWidget(Counter, SYSTEM_IDS.MAIN, SYSTEM_IDS.HOME_BUTTON);
-  
+
   // Set initial navigation to main screen
   const { WidgetNavState } = require('@/components/playground-new/widget-nav');
   const rootNav = getWidgetByID<typeof WidgetNavState>(SYSTEM_IDS.ROOT_NAV);
