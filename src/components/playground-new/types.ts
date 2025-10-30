@@ -6,6 +6,9 @@ export interface BaseWidgetState {
   id: string;
   parentID: string;
   childrenIDs: string[];
+  // Position properties (all widgets have a position)
+  x: number;
+  y: number;
 }
 
 // Widget state can be extended with custom properties

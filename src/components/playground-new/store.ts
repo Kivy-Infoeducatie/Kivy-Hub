@@ -6,6 +6,7 @@ import {
   WidgetInstance,
   SYSTEM_IDS
 } from '@/components/playground-new/types';
+import { createPositionRef, deletePositionRef } from '@/components/playground-new/core/position-utils';
 
 // Registry type that stores all widget instances
 type Registry = Map<string, WidgetInstance<any>>;
@@ -39,12 +40,14 @@ export function getWidgetByID<T extends BaseWidgetState = BaseWidgetState>(
  * @param definition - The widget definition with stateFn and Component
  * @param parentID - The parent widget ID (empty string for root)
  * @param id - Optional custom ID (auto-generated UUID if not provided)
+ * @param initialPosition - Optional initial position {x, y} (defaults to {x: 0, y: 0})
  * @returns The created widget's ID
  */
 export function createWidget<T extends BaseWidgetState>(
   definition: WidgetDefinition<T>,
   parentID: string = SYSTEM_IDS.ROOT,
-  id: string = uuid()
+  id: string = uuid(),
+  initialPosition?: { x: number; y: number }
 ): string {
   const { stateFn, Component } = definition;
 
@@ -58,13 +61,21 @@ export function createWidget<T extends BaseWidgetState>(
     throw new Error(`Parent widget "${parentID}" not found`);
   }
 
+  // Set default position
+  const position = initialPosition ?? { x: 0, y: 0 };
+
+  // Create position ref (for movable widgets without re-renders)
+  createPositionRef(id, position);
+
   // Create the Zustand store with base state + custom state
   const store = create<T>((set, get, api) => {
     // Base state is automatically provided
     const baseState: BaseWidgetState = {
       id,
       childrenIDs: [],
-      parentID
+      parentID,
+      x: position.x,
+      y: position.y
     };
 
     // Custom state from the widget definition (only widget-specific properties)
@@ -118,6 +129,9 @@ export function deleteWidget(id: string): void {
       parentState.removeChild(id);
     }
   }
+
+  // Clean up position ref
+  deletePositionRef(id);
 
   // Delete from registry
   registry.delete(id);
