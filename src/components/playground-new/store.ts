@@ -1,92 +1,159 @@
-import { create, StateCreator, type StoreApi, UseBoundStore } from 'zustand';
+import { create, type StoreApi, UseBoundStore } from 'zustand';
 import { v4 as uuid } from 'uuid';
-import { FC } from 'react';
-import { WidgetGroup } from '@/components/playground-new/widget-group';
-import { WidgetNav } from '@/components/playground-new/widget-nav';
-import { Counter } from '@/components/playground-new/counter';
-import { NavBar } from '@/components/playground-new/nav-bar';
+import {
+  BaseWidgetState,
+  WidgetDefinition,
+  WidgetInstance,
+  SYSTEM_IDS
+} from '@/components/playground-new/types';
 
-export interface PlainComponentState {
-  id: string;
-  parentID: string;
-  childrenIDs: string[];
-}
+// Registry type that stores all widget instances
+type Registry = Map<string, WidgetInstance<any>>;
 
-export type ComponentState = PlainComponentState & Record<string, any>;
+// The widget registry
+const registry: Registry = new Map();
 
-type RegistryStore = Record<
-  string,
-  {
-    data: UseBoundStore<StoreApi<ComponentState>>;
-    Component: FC<any>;
-  }
->;
-
-const registry: RegistryStore = {};
-
-function initPlayground() {
-  createWidget(WidgetGroup, '', 'root');
-  createWidget(NavBar, 'root', 'nav-bar');
-  createWidget(WidgetNav, 'root', 'root-nav');
-  createWidget(WidgetGroup, 'root-nav', 'main');
-  createWidget(WidgetGroup, 'root-nav', 'calibration');
-  createWidget(Counter, 'main', 'home-button');
-}
-
-initPlayground();
-
-export function getWidgetByID(id: string) {
-  if (!registry[id]) {
-    console.log(registry);
-    throw new Error(`Store with ID ${id} not found`);
+/**
+ * Get a widget instance by its ID
+ * @param id - The widget ID
+ * @returns The widget instance
+ * @throws Error if widget not found
+ */
+export function getWidgetByID<T extends BaseWidgetState = BaseWidgetState>(
+  id: string
+): WidgetInstance<T> {
+  const widget = registry.get(id);
+  
+  if (!widget) {
+    const availableIds = Array.from(registry.keys()).join(', ');
+    throw new Error(
+      `Widget "${id}" not found. Available widgets: [${availableIds}]`
+    );
   }
 
-  return registry[id];
+  return widget as WidgetInstance<T>;
 }
 
-export function createWidget(
-  {
-    stateFn,
-    Component
-  }: { stateFn: StateCreator<Partial<ComponentState>>; Component: FC<any> },
-  parentID: string = 'root',
+/**
+ * Create a new widget and add it to the registry
+ * @param definition - The widget definition with stateFn and Component
+ * @param parentID - The parent widget ID (empty string for root)
+ * @param id - Optional custom ID (auto-generated UUID if not provided)
+ * @returns The created widget's ID
+ */
+export function createWidget<T extends BaseWidgetState>(
+  definition: WidgetDefinition<T>,
+  parentID: string = SYSTEM_IDS.ROOT,
   id: string = uuid()
-) {
-  if (registry[id]) {
-    throw new Error(`Store with ID ${id} already exists`);
+): string {
+  const { stateFn, Component } = definition;
+
+  // Check if ID already exists
+  if (registry.has(id)) {
+    throw new Error(`Widget with ID "${id}" already exists`);
   }
 
-  if (!registry[parentID] && parentID !== '') {
-    throw new Error(`Store with ID ${parentID} not found`);
+  // Check if parent exists (except for root which has empty parent)
+  if (parentID !== '' && !registry.has(parentID)) {
+    throw new Error(`Parent widget "${parentID}" not found`);
   }
 
-  registry[id] = {
-    data: create((setState, getState, store) => ({
+  // Create the Zustand store with base state + custom state
+  const store = create<T>((set, get, api) => {
+    // Base state is automatically provided
+    const baseState: BaseWidgetState = {
       id,
       childrenIDs: [],
-      parentID,
-      ...stateFn(setState, getState, store)
-    })),
-    Component
-  };
+      parentID
+    };
 
+    // Custom state from the widget definition (only widget-specific properties)
+    const customState = stateFn(set, get, api) as any;
+
+    // Merge base state with custom state
+    return {
+      ...baseState,
+      ...customState
+    } as T;
+  });
+
+  // Register the widget instance
+  registry.set(id, {
+    store: store as UseBoundStore<StoreApi<any>>,
+    Component: Component as any
+  });
+
+  // Add this widget to parent's children
   if (parentID !== '') {
-    registry[parentID].data.getState().addChild(id);
+    const parent = registry.get(parentID);
+    if (parent) {
+      const parentState = parent.store.getState();
+      if (typeof parentState.addChild === 'function') {
+        parentState.addChild(id);
+      }
+    }
   }
 
   return id;
 }
 
-export function deleteWidget(id: string) {
-  if (!registry[id]) {
-    throw new Error(`Store with ID ${id} not found`);
+/**
+ * Delete a widget and remove it from its parent
+ * @param id - The widget ID to delete
+ */
+export function deleteWidget(id: string): void {
+  if (!registry.has(id)) {
+    throw new Error(`Widget "${id}" not found`);
   }
 
-  const parentID = registry[id].data.getState().parentID;
+  const widget = registry.get(id)!;
+  const state = widget.store.getState();
+  const parentID = state.parentID;
 
-  if (parentID) {
-    registry[parentID].data.getState().removeChild(id);
+  // Remove from parent's children list
+  if (parentID && registry.has(parentID)) {
+    const parent = registry.get(parentID)!;
+    const parentState = parent.store.getState();
+    if (typeof parentState.removeChild === 'function') {
+      parentState.removeChild(id);
+    }
   }
 
-  delete registry[id];
+  // Delete from registry
+  registry.delete(id);
 }
+
+/**
+ * Initialize the playground with default widgets
+ * Call this function to set up the initial widget tree
+ */
+export function initPlayground(): void {
+  // Import widgets here to avoid circular dependencies
+  const { WidgetGroup } = require('@/components/playground-new/widget-group');
+  const { WidgetNav } = require('@/components/playground-new/widget-nav');
+  const { NavBar } = require('@/components/playground-new/nav-bar');
+  const { Counter } = require('@/components/playground-new/counter');
+
+  // Create the widget tree
+  createWidget(WidgetGroup, '', SYSTEM_IDS.ROOT);
+  createWidget(NavBar, SYSTEM_IDS.ROOT, SYSTEM_IDS.NAV_BAR);
+  createWidget(WidgetNav, SYSTEM_IDS.ROOT, SYSTEM_IDS.ROOT_NAV);
+  
+  // Create screen widgets (they're independent, not children of nav)
+  createWidget(WidgetGroup, SYSTEM_IDS.ROOT, SYSTEM_IDS.MAIN);
+  createWidget(WidgetGroup, SYSTEM_IDS.ROOT, SYSTEM_IDS.CALIBRATION);
+  
+  // Create widgets within screens
+  createWidget(Counter, SYSTEM_IDS.MAIN, SYSTEM_IDS.HOME_BUTTON);
+  
+  // Set initial navigation to main screen
+  const { WidgetNavState } = require('@/components/playground-new/widget-nav');
+  const rootNav = getWidgetByID<typeof WidgetNavState>(SYSTEM_IDS.ROOT_NAV);
+  const state = rootNav.store.getState();
+  if (typeof state.setSelected === 'function') {
+    state.setSelected(SYSTEM_IDS.MAIN);
+  }
+}
+
+// Initialize on module load
+initPlayground();

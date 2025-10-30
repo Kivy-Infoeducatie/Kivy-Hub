@@ -1,46 +1,35 @@
-import { ComponentState } from '@/components/playground-new/store';
-import { StateCreator } from 'zustand/index';
-import { SceneComponent } from './scene-component';
+import { StateCreator } from 'zustand';
+import { BaseWidgetState, WidgetDefinition } from '@/components/playground-new/types';
+import { SceneComponent } from '@/components/playground-new/scene-component';
 
-const stateFn: StateCreator<Partial<ComponentState>> = (set) => ({
-  addChild(id: string) {
-    set((s) => ({
-      childrenIDs: [...s.childrenIDs!, id]
-    }));
-  },
-  removeChild(id: string) {
-    set((s) => ({
-      childrenIDs: s.childrenIDs!.filter((i) => i !== id)
-    }));
-  },
+// WidgetNav custom state - just navigation, no child management
+interface WidgetNavCustomState {
+  selected: string;
+  setSelected: (id: string) => void;
+}
+
+// Full WidgetNav state (base + custom) - exported for use in other components
+export interface WidgetNavState extends BaseWidgetState {
+  selected: string;
+  setSelected: (id: string) => void;
+}
+
+const stateFn: StateCreator<WidgetNavCustomState> = (set) => ({
   selected: '',
   setSelected(id: string) {
-    set((s) => ({
-      selected: id
-    }));
+    set({ selected: id });
   }
 });
 
-function Component({
-  childrenIDs,
-  selected,
-  id
-}: {
-  childrenIDs: string[];
-  selected: string;
-  id: string;
-}) {
+function Component({ selected, id }: WidgetNavState) {
   return (
-    <div data-id={id} data-selected={selected}>
-      {childrenIDs.map(
-        (childID) =>
-          selected === childID && <SceneComponent id={childID} key={childID} />
-      )}
+    <div data-id={id} data-widget-type="nav" data-selected={selected}>
+      {selected && <SceneComponent id={selected} />}
     </div>
   );
 }
 
-export const WidgetNav = {
+export const WidgetNav: WidgetDefinition<WidgetNavState> = {
   stateFn,
   Component
 };

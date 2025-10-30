@@ -1,41 +1,45 @@
-import { ComponentState } from '@/components/playground-new/store';
-import { StateCreator } from 'zustand/index';
+import { StateCreator } from 'zustand';
+import { BaseWidgetState, WidgetDefinition } from '@/components/playground-new/types';
 
-const stateFn: StateCreator<Partial<ComponentState>> = (set, get) => ({
+// Counter widget custom state (base state is added automatically)
+interface CounterCustomState {
+  count: number;
+  add: () => void;
+  subtract: () => void;
+}
+
+// Full counter state (base + custom)
+interface CounterState extends BaseWidgetState {
+  count: number;
+  add: () => void;
+  subtract: () => void;
+}
+
+const stateFn: StateCreator<CounterCustomState> = (set) => ({
+  count: 0,
   add() {
-    set((s) => ({
-      count: s.count + 1
+    set((state) => ({
+      count: (state as any).count + 1
     }));
   },
   subtract() {
-    set((s) => ({
-      count: s.count - 1
+    set((state) => ({
+      count: (state as any).count - 1
     }));
-  },
-  count: 3
+  }
 });
 
-function Component({
-  add,
-  subtract,
-  count
-}: {
-  add: () => void;
-  subtract: () => void;
-  count: number;
-}) {
-  console.log('render');
-
+function Component({ add, subtract, count, id }: CounterState) {
   return (
-    <div>
+    <div data-id={id} data-widget-type="counter">
       <button onClick={add}>Add</button>
-      <label>{count}</label>
+      <span style={{ margin: '0 1rem' }}>{count}</span>
       <button onClick={subtract}>Subtract</button>
     </div>
   );
 }
 
-export const Counter = {
+export const Counter: WidgetDefinition<CounterState> = {
   stateFn,
   Component
 };

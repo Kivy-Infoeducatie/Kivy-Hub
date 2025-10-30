@@ -1,33 +1,42 @@
-import {
-  ComponentState,
-  getWidgetByID
-} from '@/components/playground-new/store';
-import { StateCreator } from 'zustand/index';
+import { StateCreator } from 'zustand';
+import { BaseWidgetState, WidgetDefinition, SYSTEM_IDS } from '@/components/playground-new/types';
+import { getWidgetByID } from '@/components/playground-new/store';
+import { WidgetNavState } from './widget-nav';
 
-const stateFn: StateCreator<Partial<ComponentState>> = (set, get) => ({});
+// NavBar has no custom state (only base state, which is added automatically)
+type NavBarCustomState = Record<string, never>;
 
-function Component() {
+// Full NavBar state (just base state)
+type NavBarState = BaseWidgetState;
+
+const stateFn: StateCreator<NavBarCustomState> = () => ({});
+
+function Component({ id }: NavBarState) {
+  const handleNavigate = (screenId: string) => {
+    try {
+      const rootNav = getWidgetByID<WidgetNavState>(SYSTEM_IDS.ROOT_NAV);
+      const state = rootNav.store.getState();
+      if (typeof state.setSelected === 'function') {
+        state.setSelected(screenId);
+      }
+    } catch (error) {
+      console.error('Failed to navigate:', error);
+    }
+  };
+
   return (
-    <div>
-      <button
-        onClick={() => {
-          getWidgetByID('root-nav').data.getState().setSelected('main');
-        }}
-      >
-        set main
+    <div data-id={id} data-widget-type="navbar">
+      <button onClick={() => handleNavigate(SYSTEM_IDS.MAIN)}>
+        Main
       </button>
-      <button
-        onClick={() => {
-          getWidgetByID('root-nav').data.getState().setSelected('calibration');
-        }}
-      >
-        set calib
+      <button onClick={() => handleNavigate(SYSTEM_IDS.CALIBRATION)}>
+        Calibration
       </button>
     </div>
   );
 }
 
-export const NavBar = {
+export const NavBar: WidgetDefinition<NavBarState> = {
   stateFn,
   Component
 };

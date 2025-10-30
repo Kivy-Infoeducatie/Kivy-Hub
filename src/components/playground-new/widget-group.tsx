@@ -1,23 +1,37 @@
-import { ComponentState } from '@/components/playground-new/store';
-import { StateCreator } from 'zustand/index';
-import { SceneComponent } from './scene-component';
+import { StateCreator } from 'zustand';
+import { BaseWidgetState, WidgetDefinition } from '@/components/playground-new/types';
+import { SceneComponent } from '@/components/playground-new/scene-component';
 
-const stateFn: StateCreator<Partial<ComponentState>> = (set) => ({
+// Widget custom state for groups
+// Note: We include childrenIDs here because this widget modifies it
+interface WidgetGroupCustomState {
+  childrenIDs?: string[]; // Optional because base state provides default
+  addChild: (id: string) => void;
+  removeChild: (id: string) => void;
+}
+
+// Full widget state (base + custom)
+interface WidgetGroupState extends BaseWidgetState {
+  addChild: (id: string) => void;
+  removeChild: (id: string) => void;
+}
+
+const stateFn: StateCreator<WidgetGroupCustomState> = (set) => ({
   addChild(id: string) {
-    set((s) => ({
-      childrenIDs: [...s.childrenIDs!, id]
+    set((state) => ({
+      childrenIDs: [...(state.childrenIDs || []), id]
     }));
   },
   removeChild(id: string) {
-    set((s) => ({
-      childrenIDs: s.childrenIDs!.filter((i) => i !== id)
+    set((state) => ({
+      childrenIDs: (state.childrenIDs || []).filter((childId) => childId !== id)
     }));
   }
 });
 
-function Component({ childrenIDs, id }: { childrenIDs: string[]; id: string }) {
+function Component({ childrenIDs, id }: WidgetGroupState) {
   return (
-    <div data-id={id}>
+    <div data-id={id} data-widget-type="group">
       {childrenIDs.map((childID) => (
         <SceneComponent id={childID} key={childID} />
       ))}
@@ -25,7 +39,7 @@ function Component({ childrenIDs, id }: { childrenIDs: string[]; id: string }) {
   );
 }
 
-export const WidgetGroup = {
+export const WidgetGroup: WidgetDefinition<WidgetGroupState> = {
   stateFn,
   Component
 };
