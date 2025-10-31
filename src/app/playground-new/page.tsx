@@ -6,6 +6,7 @@ import { createWidget } from '@/components/playground-new/store';
 import { Counter } from '@/components/playground-new/counter';
 import { Timer } from '@/components/playground-new/timer';
 import { SYSTEM_IDS } from '@/components/playground-new/types';
+import '@/lib/fontawesome/css/fa.css';
 
 export default function PlaygroundPage() {
   const handleAddCounter = () => {

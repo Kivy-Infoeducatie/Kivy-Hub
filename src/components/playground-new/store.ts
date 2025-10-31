@@ -153,7 +153,7 @@ export function initPlayground(): void {
   // Import widgets here to avoid circular dependencies
   const { WidgetGroup } = require('@/components/playground-new/widget-group');
   const { WidgetNav } = require('@/components/playground-new/widget-nav');
-  const { HomeWidget } = require('@/components/playground-new/home-widget');
+  const { HomeWidget } = require('@/components/playground-new/home-widget/home-widget');
 
   // Create the widget tree
   createWidget(WidgetGroup, '', SYSTEM_IDS.ROOT);
