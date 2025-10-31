@@ -6,6 +6,7 @@ import { ScreenProvider } from '@/lib/core/screens/screen-context';
 import '@/lib/fontawesome/css/fa.css';
 import { TimerWidgetProvider } from '@/components/playground/widgets/timer-widget/timer-widget-context';
 import { RecipeWidgetProvider } from '@/components/playground/widgets/recipe-widget/recipe-widget-context';
+import { SpeechRecognitionProvider } from '@/components/playground/widgets/speech-widget/speech-widget-context';
 
 export default function () {
   return (
@@ -13,7 +14,8 @@ export default function () {
       providers={[
         HandTrackingProvider,
         TimerWidgetProvider,
-        RecipeWidgetProvider
+        RecipeWidgetProvider,
+        SpeechRecognitionProvider
       ]}
     >
       <ScreenProvider />

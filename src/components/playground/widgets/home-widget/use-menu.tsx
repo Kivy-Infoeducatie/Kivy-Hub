@@ -15,17 +15,96 @@ import {
   salad,
   soup
 } from '@/components/playground/widgets/recipe-widget/recipes';
+import { useSpeechRecognition } from '@/components/playground/widgets/speech-widget/speech-widget-context';
 
 export function useMenu() {
   const { addTimer, stacks } = useTimerWidget();
   const { setSelectedScreen } = useScreenContext();
-  const { setRecipe } = useRecipeWidget();
+  const { recipe, setRecipe } = useRecipeWidget();
+  const { startListening, setOnResult } = useSpeechRecognition();
+
+  const recipeRef = useRef(recipe);
+
+  useEffect(() => {
+    recipeRef.current = recipe;
+  }, [recipe]);
+
+
+  console.log('recipe', recipe);
 
   const stacksRef = useRef<TimerStack[]>([]);
 
   useEffect(() => {
     stacksRef.current = stacks;
   }, [stacks]);
+
+  // Function to transform API response to RecipeWidgetProps
+  const transformApiRecipeToWidget = (apiRecipe: any) => {
+    // Transform ingredients array from API format
+    const ingredients = apiRecipe.ingredients?.map((ing: any) => {
+      const parts = [];
+      if (ing.quantity) parts.push(ing.quantity);
+      if (ing.unit) parts.push(ing.unit);
+      if (ing.name) parts.push(ing.name);
+      return parts.join(' ');
+    }) || [];
+
+    return {
+      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c', // Default food image
+      title: apiRecipe.name,
+      author: 'Food.com',
+      steps: apiRecipe.steps || [],
+      ingredients: ingredients,
+      cookTime: apiRecipe.cooking_time ? `${apiRecipe.cooking_time} min` : 'N/A',
+      nutritionalInfo: {
+        calories: apiRecipe.calories || 0,
+        protein: apiRecipe.protein || 0,
+        carbs: apiRecipe.carbohydrates || 0,
+        fat: apiRecipe.total_fat || 0
+      },
+      weight: apiRecipe.serving_size || 'N/A'
+    };
+  };
+
+  // Function to transform current recipe to API format
+  const transformWidgetRecipeToApi = (widgetRecipe: any) => {
+    return {
+      name: widgetRecipe.title,
+      ingredients: widgetRecipe.ingredients || [],
+      steps: widgetRecipe.steps || []
+    };
+  };
+
+  // Function to call recipe action API
+  const callRecipeActionApi = async (prompt: string) => {
+    try {
+      const currentRecipeForApi = transformWidgetRecipeToApi(recipeRef.current);
+      const response = await fetch('http://localhost:8000/recipes/action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          current_recipe: currentRecipeForApi
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const apiRecipe = await response.json();
+      console.log('API Response:', apiRecipe);
+      
+      // Transform and set the new recipe
+      const transformedRecipe = transformApiRecipeToWidget(apiRecipe);
+      setRecipe(transformedRecipe);
+      
+    } catch (error) {
+      console.error('Error calling recipe API:', error);
+    }
+  };
 
   const mainMenu: HomeMenu = {
     items: [
@@ -50,7 +129,12 @@ export function useMenu() {
       {
         icon: <i className='fa fa-brain text-6xl' />,
         fn(setHomeMenu: setHomeMenuFn) {
-          setHomeMenu(AIMenu);
+          // Directly start listening and call API when done
+          setOnResult((text: string) => {
+            console.log('Speech recognized:', text);
+            callRecipeActionApi(text);
+          });
+          startListening();
         }
       },
       {
@@ -194,17 +278,6 @@ export function useMenu() {
     icon: <i className='fa fa-book text-6xl' />,
     showBack: true,
     backFn(setHomeMenu: setHomeMenuFn) {
-      setHomeMenu(mainMenu);
-    }
-  };
-
-  const AIMenu: HomeMenu = {
-    items: [],
-    text: 'Speak...',
-    icon: <i className='fa fa-brain text-6xl' />,
-    showBack: true,
-    backFn(setHomeMenu: setHomeMenuFn) {
-
       setHomeMenu(mainMenu);
     }
   };

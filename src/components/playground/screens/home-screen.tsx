@@ -5,6 +5,7 @@ import { StartCameraWidget } from '@/components/playground/widgets/start-camera-
 import { TimerWidgetStack } from '@/components/playground/widgets/timer-widget/timer-widget-stack';
 import { cn } from '@/lib/utils';
 import RecipeWidget from '@/components/playground/widgets/recipe-widget/recipe-widget';
+import { SpeechWidget } from '@/components/playground/widgets/speech-widget/speech-widget';
 
 export function HomeScreen({ active }: { active: boolean }) {
   const { stacks } = useTimerWidget();
@@ -15,6 +16,7 @@ export function HomeScreen({ active }: { active: boolean }) {
       <HomeWidget />
       <StartCameraWidget />
       <RecipeWidget />
+      <SpeechWidget />
       {stacks.map((stack) => (
         <TimerWidgetStack key={stack.id} timers={stack.timers} />
       ))}

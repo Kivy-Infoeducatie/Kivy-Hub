@@ -32,6 +32,7 @@ interface RecipeWidgetProps {
   title: string;
   author: string;
   steps: string[];
+  ingredients?: string[];
   cookTime: string;
   nutritionalInfo: NutritionalInfo;
   weight: string;
