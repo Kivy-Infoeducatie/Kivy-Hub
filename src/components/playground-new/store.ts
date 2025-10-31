@@ -136,6 +136,11 @@ export function deleteWidget(id: string): void {
   // Clean up position ref
   deletePositionRef(id);
 
+  // Clean up timer interval if this is a timer widget (interval is stored in state)
+  if ('intervalId' in state && state.intervalId && typeof state.intervalId === 'object') {
+    clearInterval(state.intervalId as any);
+  }
+
   // Delete from registry
   registry.delete(id);
 }
@@ -148,7 +153,7 @@ export function initPlayground(): void {
   // Import widgets here to avoid circular dependencies
   const { WidgetGroup } = require('@/components/playground-new/widget-group');
   const { WidgetNav } = require('@/components/playground-new/widget-nav');
-  const { Counter } = require('@/components/playground-new/counter');
+  const { HomeWidget } = require('@/components/playground-new/home-widget');
 
   // Create the widget tree
   createWidget(WidgetGroup, '', SYSTEM_IDS.ROOT);
@@ -158,8 +163,18 @@ export function initPlayground(): void {
   createWidget(WidgetGroup, SYSTEM_IDS.ROOT_NAV, SYSTEM_IDS.MAIN);
   createWidget(WidgetGroup, SYSTEM_IDS.ROOT_NAV, SYSTEM_IDS.CALIBRATION);
 
-  // Create widgets within screens
-  createWidget(Counter, SYSTEM_IDS.MAIN, SYSTEM_IDS.HOME_BUTTON);
+  // Create home widget positioned in bottom right
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+  createWidget(
+    HomeWidget,
+    SYSTEM_IDS.MAIN,
+    undefined,
+    {
+      x: windowWidth - 320 - 48, // right: 3rem (48px), width: 320px
+      y: windowHeight - 320 - 48 // bottom: 3rem (48px), height: 320px
+    }
+  );
 
   // Set initial navigation to main screen
   const { WidgetNavState } = require('@/components/playground-new/widget-nav');
