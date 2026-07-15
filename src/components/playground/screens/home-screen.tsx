@@ -5,19 +5,33 @@ import { StartCameraWidget } from '@/components/playground/widgets/start-camera-
 import { TimerWidgetStack } from '@/components/playground/widgets/timer-widget/timer-widget-stack';
 import { cn } from '@/lib/utils';
 import RecipeWidget from '@/components/playground/widgets/recipe-widget/recipe-widget';
+import {
+  HomeWidgetProvider,
+  useHomeWidget
+} from '@/components/playground/widgets/home-widget/home-widget-context';
 
-export function HomeScreen({ active }: { active: boolean }) {
+function HomeScreenContent({ active }: { active: boolean }) {
   const { stacks } = useTimerWidget();
+  const { isAIMode } = useHomeWidget();
 
   return (
     <div className={cn(!active && 'hidden')}>
-      <HandTrackingVideo />
+      {/*{!isAIMode && <HandTrackingVideo />}*/}
       <HomeWidget />
-      <StartCameraWidget />
-      <RecipeWidget />
-      {stacks.map((stack) => (
-        <TimerWidgetStack key={stack.id} timers={stack.timers} />
-      ))}
+      {!isAIMode && <StartCameraWidget />}
+      {!isAIMode && <RecipeWidget />}
+      {!isAIMode &&
+        stacks.map((stack) => (
+          <TimerWidgetStack key={stack.id} timers={stack.timers} />
+        ))}
     </div>
+  );
+}
+
+export function HomeScreen({ active }: { active: boolean }) {
+  return (
+    <HomeWidgetProvider>
+      <HomeScreenContent active={active} />
+    </HomeWidgetProvider>
   );
 }

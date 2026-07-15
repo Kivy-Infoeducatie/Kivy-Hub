@@ -11,7 +11,7 @@ export function useWebcam(
     if (!videoRef.current) return;
 
     const constraints = {
-      video: { width: 640, height: 480 }
+      video: { width: 1920, height: 1080 }
     };
 
     async function enableWebcam() {

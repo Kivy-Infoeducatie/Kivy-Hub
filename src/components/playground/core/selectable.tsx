@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { cn } from '@/lib/utils';
 import { HandEvent } from '@/lib/core/hand-tracking/hand-tracking-types';
+import { useInteractionContext } from '@/components/playground/contexts/interaction-context';
 
 type TouchEvent = Event & {
   detail: {
@@ -22,10 +23,21 @@ function canInteract(
   onPrimaryPress: TouchFunction | undefined,
   onSecondaryPress: TouchFunction | undefined,
   onTertiaryPress: TouchFunction | undefined,
-  enabled: boolean
+  enabled: boolean,
+  locked: boolean,
+  ignoreLock: {
+    primary: boolean;
+    secondary: boolean;
+    tertiary: boolean;
+  }
 ) {
   if (!enabled) return '000';
-  return `${onPrimaryPress ? '1' : '0'}${onSecondaryPress ? '1' : '0'}${onTertiaryPress ? '1' : '0'}`;
+
+  if (!locked) {
+    return `${onPrimaryPress ? '1' : '0'}${onSecondaryPress ? '1' : '0'}${onTertiaryPress ? '1' : '0'}`;
+  }
+
+  return `${onPrimaryPress && ignoreLock.primary ? '1' : '0'}${onSecondaryPress && ignoreLock.secondary ? '1' : '0'}${onTertiaryPress && ignoreLock.tertiary ? '1' : '0'}`;
 }
 
 export type SelectableProps = HTMLAttributes<HTMLDivElement> & {
@@ -42,6 +54,11 @@ export type SelectableProps = HTMLAttributes<HTMLDivElement> & {
   forceSelect?: boolean;
   stopPropagation?: boolean;
   showFeedback?: boolean;
+  ignoreLock?: {
+    primary: boolean;
+    secondary: boolean;
+    tertiary: boolean;
+  };
 };
 
 const colors = {
@@ -62,6 +79,11 @@ export function Selectable({
   delay = 500,
   stopPropagation = false,
   showFeedback = true,
+  ignoreLock = {
+    primary: false,
+    secondary: false,
+    tertiary: false
+  },
   ref,
   ...props
 }: SelectableProps) {
@@ -70,6 +92,8 @@ export function Selectable({
   const selectingRef = useRef(false);
   const timeOutRef = useRef<NodeJS.Timeout>(null);
   const divRef = ref ?? useRef<HTMLDivElement>(null);
+
+  const { locked } = useInteractionContext();
 
   useEffect(() => {
     if (!enabled) {
@@ -98,8 +122,6 @@ export function Selectable({
 
     const handleTouchUp =
       (handEvent: HandEvent, fn?: TouchFunction) => (e: TouchEvent) => {
-        console.log('touch uop', handEvent, selected);
-
         if (stopPropagation) e.stopPropagation();
         if (timeOutRef.current) clearTimeout(timeOutRef.current);
         selectingRef.current = false;
@@ -173,7 +195,9 @@ export function Selectable({
         onPrimaryPress,
         onSecondaryPress,
         onTertiaryPress,
-        enabled
+        enabled,
+        locked,
+        ignoreLock
       )}
       {...props}
       ref={divRef}

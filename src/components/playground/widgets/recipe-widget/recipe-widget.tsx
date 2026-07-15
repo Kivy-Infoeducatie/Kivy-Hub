@@ -7,12 +7,7 @@ export default function RecipeWidget() {
   return (
     <div className='fixed top-6 left-6'>
       <div className='max-h-[80vh] w-[400px] overflow-hidden overflow-y-auto rounded-lg bg-white shadow-md'>
-        <div className='relative h-64 w-full'>
-          <img
-            src={recipe.imageUrl}
-            alt={recipe.title}
-            className='h-full w-full object-cover'
-          />
+        <div className='relative w-full'>
           <div className='absolute top-3 right-3 rounded-full bg-amber-500 px-4 py-2 text-base font-medium text-white'>
             {recipe.cookTime}
           </div>

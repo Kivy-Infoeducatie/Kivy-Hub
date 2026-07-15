@@ -28,7 +28,6 @@ import { useMouseSupport } from '@/lib/core/hand-tracking/use-mouse-support';
 import { EventRegistry } from '@/lib/core/event-handling/event-registry';
 import { eventPropagation } from '@/lib/core/event-handling/event-propagation';
 import { NormalizedLandmark } from '@mediapipe/hands';
-import { transformCoordinates } from '@/utils/matrix';
 
 interface HandTrackingContextInterface {
   handTracker: HandLandmarker | null;
@@ -107,10 +106,18 @@ export function HandTrackingProvider({ children }: { children: ReactNode }) {
 
       const parsed = results.landmarks.map((landmark) =>
         landmark.map((l) => ({
-          ...transformCoordinates(l.x, l.y),
+          x: l.x,
+          y: l.y,
           z: 0
         }))
       );
+
+      // const parsed = results.landmarks.map((landmark) =>
+      //   landmark.map((l) => ({
+      //     ...transformCoordinates(l.x, l.y),
+      //     z: 0
+      //   }))
+      // );
 
       // @ts-ignore
       results.landmarks = parsed;
@@ -132,9 +139,13 @@ export function HandTrackingProvider({ children }: { children: ReactNode }) {
           // Safety check: ensure coordinates are finite before using them
           const screenX = point.x * window.innerWidth;
           const screenY = point.y * window.innerHeight;
-          
+
           if (!isFinite(screenX) || !isFinite(screenY)) {
-            console.warn('Non-finite coordinates detected:', { screenX, screenY, point });
+            console.warn('Non-finite coordinates detected:', {
+              screenX,
+              screenY,
+              point
+            });
             return;
           }
 

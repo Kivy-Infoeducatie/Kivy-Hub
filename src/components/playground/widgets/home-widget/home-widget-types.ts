@@ -14,4 +14,5 @@ export type HomeItem = {
   icon?: ReactNode;
   text?: string;
   fn(setHomeMenu: setHomeMenuFn): void;
+  secondaryFn?: (setHomeMenu: setHomeMenuFn) => void;
 };

@@ -10,15 +10,20 @@ interface MenuItemsProps {
   menuItems: HomeItem[];
   setIsOpen: (value: boolean) => void;
   setHomeMenu: (homeMenu: HomeMenu) => void;
+  fullCircle?: boolean;
 }
 
 export function MenuItems({
   isOpen,
   menuItems,
   setIsOpen,
-  setHomeMenu
+  setHomeMenu,
+  fullCircle = false
 }: MenuItemsProps) {
   const radius = 270;
+
+  const total = menuItems.length;
+  const step = total > 0 ? (2 * Math.PI) / total : 0;
 
   return (
     <>
@@ -26,7 +31,9 @@ export function MenuItems({
         let nr1 = menuItems.length > 2 ? 0.35 : 0.52;
         let nr2 = menuItems.length > 2 ? 1.25 : 2;
 
-        const angle = -Math.PI * (nr1 + index / (menuItems.length - 1) / nr2);
+        const angle = fullCircle
+          ? -Math.PI / 2 + step * index
+          : -Math.PI * (nr1 + index / (menuItems.length - 1) / nr2);
         const x = radius * Math.cos(angle);
         const y = radius * Math.sin(angle);
 
@@ -51,7 +58,10 @@ export function MenuItems({
                   setIsOpen(!isOpen);
                 }
               }}
-              className='flex h-32 w-32 items-center justify-center rounded-full bg-white text-black'
+              onSecondaryPress={() => {
+                item.secondaryFn?.(setHomeMenu);
+              }}
+              className='flex h-32 w-32 items-center justify-center rounded-full bg-white/60 text-black'
             >
               {item.icon ?? (
                 <label className='text-5xl font-bold'>{item.text}</label>

@@ -1,9 +1,8 @@
 const M = new Float32Array([
-  1.049525092335538, -0.001031056188688, -47.53998288664623, -0.002986916173688,
-  1.091447596196915, -36.593800542691326, -0.000002330078267,
-  -0.000002193675746, 1
+  1.0675905314427587, -0.0036393647084754593, -61.25699153315188,
+  0.0014837666654052516, 1.097510177539108, -44.70314564943713,
+  3.0912634452906935e-6, -5.092366810614322e-6, 1.0
 ]);
-
 const width = 1920;
 const height = 1200;
 
@@ -30,7 +29,6 @@ export function transformCoordinates(x: number, y: number) {
   const normalizedY = newY / height;
 
   // Invert the X axis
-  const invertedX = 1 - normalizedX;
 
-  return { x: invertedX, y: normalizedY };
+  return { x: 1 - (normalizedX - 0.182) * 1.61, y: (normalizedY - 0.08) * 1.61 };
 }

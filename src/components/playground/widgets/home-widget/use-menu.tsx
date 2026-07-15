@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid';
 import { TimerStack } from '@/components/playground/widgets/timer-widget/timer-widget-types';
 import { useScreenContext } from '@/lib/core/screens/screen-context';
 import { useRecipeWidget } from '@/components/playground/widgets/recipe-widget/recipe-widget-context';
+import { useHomeWidget } from '@/components/playground/widgets/home-widget/home-widget-context';
 import {
   chickenDish,
   healthy,
@@ -20,6 +21,7 @@ export function useMenu() {
   const { addTimer, stacks } = useTimerWidget();
   const { setSelectedScreen } = useScreenContext();
   const { setRecipe } = useRecipeWidget();
+  const { setIsAIMode, setSelectedIngredient } = useHomeWidget();
 
   const stacksRef = useRef<TimerStack[]>([]);
 
@@ -50,6 +52,8 @@ export function useMenu() {
       {
         icon: <i className='fa fa-brain text-6xl' />,
         fn(setHomeMenu: setHomeMenuFn) {
+          setIsAIMode(true);
+          setSelectedIngredient(null);
           setHomeMenu(AIMenu);
         }
       },
@@ -204,7 +208,8 @@ export function useMenu() {
     icon: <i className='fa fa-brain text-6xl' />,
     showBack: true,
     backFn(setHomeMenu: setHomeMenuFn) {
-
+      setIsAIMode(false);
+      setSelectedIngredient(null);
       setHomeMenu(mainMenu);
     }
   };
